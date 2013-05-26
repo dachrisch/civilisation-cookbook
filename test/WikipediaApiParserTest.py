@@ -4,12 +4,20 @@ Created on May 26, 2013
 @author: cda
 '''
 import unittest
+from parser.wikipedia import WikipediaApiParser
 
 
 def find_links_in_text(text):
     import re
     return tuple(re.findall(ur"\[\[(.+?)\]\]+?", text))
 
+
+class WikipediaApiParserTest(unittest.TestCase):
+    
+    def test_load_wikipedia_site(self):
+        site = WikipediaApiParser().load_wikipedia_site('Main Page')
+        self.assertEquals('Main Page', site.title)
+ 
 
 class WikimarkupParserTest(unittest.TestCase):
 
@@ -44,6 +52,7 @@ class WikimarkupParserTest(unittest.TestCase):
  'Portal:Society|Society',
  'Portal:Technology|Technology',
  'Portal:Contents/Portals|All portals'), find_links_in_text(text))
+        
 
 if __name__ == "__main__":
     unittest.main()
