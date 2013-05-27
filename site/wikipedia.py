@@ -15,17 +15,18 @@ def lazyprop(fn):
 
 
 class WikipediaLink(object):
-    def __init__(self, name, source, parser = None):
+    def __init__(self, name, target_name = None, source = None, parser = None):
         self.name = name
+        self.target_name = target_name or name
         self.source = source
         self.parser = parser
         
     @property
     def target(self):
-        return WikipediaSite(self.name, self.parser)
+        return WikipediaSite(self.target_name, self.parser)
 
     def __key(self):
-        return (self.name, self.source)
+        return (self.name, self.target)
 
     def __eq__(self, other):
         return self.__key() == other.__key()
@@ -48,7 +49,7 @@ class WikipediaSite(object):
         self.parser = parser
         if parser:
             links_and_names = self.parser.parse_links(self.title)
-            self.links_by_name = dict((link_and_name['name'], WikipediaLink(link_and_name['link'], self, self.parser)) for link_and_name in links_and_names)
+            self.links_by_name = dict((link_and_name['name'], WikipediaLink(link_and_name['name'], link_and_name['link'], self, self.parser)) for link_and_name in links_and_names)
 
     @property
     def links(self):

@@ -91,8 +91,9 @@ class WikipediaVisitorTest(unittest.TestCase):
             
     def test_visit_all_sites_by_depth(self):
         loader = WikipediaLoader()
-        pages = {'Source Page' : json.loads(r"""{"query":{"pages":{"15580374":{"pageid":15580374,"ns":0,"title":"Source Page","revisions":[{"contentformat":"text/x-wiki","contentmodel":"wikitext","*":"link to [[Target Page]], other link won't count [[Target Page]]"}]}}}}"""),
-                'Target Page' : json.loads(r"""{"query":{"pages":{"15580374":{"pageid":15580374,"ns":0,"title":"Target Page","revisions":[{"contentformat":"text/x-wiki","contentmodel":"wikitext","*":"link to [[Source Page]]"}]}}}}""")}
+        pages = {'Source Page' : json.loads(r"""{"query":{"pages":{"15580374":{"pageid":15580374,"ns":0,"title":"Source Page","revisions":[{"contentformat":"text/x-wiki","contentmodel":"wikitext","*":"link to [[Target Page]], "}]}}}}"""),
+                'Target Page' : json.loads(r"""{"query":{"pages":{"15580374":{"pageid":15580374,"ns":0,"title":"Target Page","revisions":[{"contentformat":"text/x-wiki","contentmodel":"wikitext","*":"link to [[Source Page]]"}]}}}}""")
+                }
         loader._query_api = lambda title : pages[title]
         parser = WikipediaApiParser(loader)
         site = WikipediaSite('Source Page', parser)
@@ -100,8 +101,8 @@ class WikipediaVisitorTest(unittest.TestCase):
         visitor.start_site = site
         visitor.max_depth = 2
         sites = visitor.link_statistics().items()
-        self.assertEquals([(WikipediaLink('Target Page', WikipediaSite('Source Page')), 1), 
-                           (WikipediaLink('Source Page', WikipediaSite('Target Page')), 1)], 
+        self.assertEquals([(WikipediaLink('Source Page', source = WikipediaSite('Target Page')), 1), 
+                           (WikipediaLink('Target Page', source = WikipediaSite('Source Page')), 1)], 
                           sites)
 
 
