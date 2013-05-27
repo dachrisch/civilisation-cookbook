@@ -4,16 +4,6 @@ Created on May 26, 2013
 @author: cda
 '''
 
-class WikipediaLink(object):
-    def __init__(self, name, source, parser):
-        self.name = name
-        self.source = source
-        self.parser = parser
-        
-    @property
-    def target(self):
-        return WikipediaSite(self.name, self.parser)
-
 def lazyprop(fn):
     attr_name = '_lazy_' + fn.__name__
     @property
@@ -23,19 +13,58 @@ def lazyprop(fn):
         return getattr(self, attr_name)
     return _lazyprop
 
+
+class WikipediaLink(object):
+    def __init__(self, name, source, parser = None):
+        self.name = name
+        self.source = source
+        self.parser = parser
+        
+    @property
+    def target(self):
+        return WikipediaSite(self.name, self.parser)
+
+    def __key(self):
+        return (self.name, self.source)
+
+    def __eq__(self, other):
+        return self.__key() == other.__key()
+
+    def __hash__(self):
+        return hash(self.__key())
+    
+    def __repr__(self):
+        return '%(source)s--[%(name)s]-->%(target)s' % {'source' : self.source,
+                                                        'target' : self.target,
+                                                        'name' : self.name}
+    
 class WikipediaSite(object):
     
     def __parse_title(self, page):
         return page['title']
 
-    def __init__(self, title, parser):
+    def __init__(self, title, parser = None):
         self.title = title
         self.parser = parser
+        if parser:
+            links_and_names = self.parser.parse_links(self.title)
+            self.links_by_name = dict((link_and_name['name'], WikipediaLink(link_and_name['link'], self, self.parser)) for link_and_name in links_and_names)
 
-    @lazyprop
+    @property
     def links(self):
-        links = self.parser.parse_links(self.title)
-        return dict((link, WikipediaLink(link, self, self.parser)) for link in links)
+        return self.links_by_name.values()
 
     def link(self, name):
-        return self.links[name]
+        return self.links_by_name[name]
+
+    def __key(self):
+        return (self.title, )
+
+    def __eq__(self, other):
+        return self.__key() == other.__key()
+
+    def __hash__(self):
+        return hash(self.__key())
+
+    def __repr__(self):
+        return '(%(title)s)' % self.__dict__
