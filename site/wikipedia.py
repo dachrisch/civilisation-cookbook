@@ -2,6 +2,7 @@
 Created on May 26, 2013
 
 @author: cda
+# -*- coding: UTF-8 -*-
 '''
 
 def lazyprop(fn):
@@ -38,18 +39,17 @@ class WikipediaLink(object):
         return '%(source)s--[%(name)s]-->%(target)s' % {'source' : self.source,
                                                         'target' : self.target,
                                                         'name' : self.name}
-    
-class WikipediaSite(object):
-    
-    def __parse_title(self, page):
-        return page['title']
 
+class WikipediaSite(object):
     def __init__(self, title, parser = None):
         self.title = title
         self.parser = parser
         if parser:
             links_and_names = self.parser.parse_links(self.title)
             self.links_by_name = dict((link_and_name['name'], WikipediaLink(link_and_name['name'], link_and_name['link'], self, self.parser)) for link_and_name in links_and_names)
+
+    def __parse_title(self, page):
+        return page['title']
 
     @property
     def links(self):

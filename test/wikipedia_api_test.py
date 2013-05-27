@@ -6,39 +6,31 @@ Created on May 26, 2013
 import unittest
 import json
 from site.wikipedia import WikipediaSite, WikipediaLink
-from parser.wikipedia import WikipediaLoader, WikipediaApiParser
-from collections import Counter
+from parser.wikipedia import WikipediaLoader, WikipediaApiParser,\
+    find_links_in_text
+from visitor.wikipedia import WikipediaVisitor
 
-class WikipediaVisitor(object):
-    def __init__(self):
-        self.max_depth = 1
-        self.__current_depth = 0
-        
-    def _follow_links(self, site):
-        print site
-        print site.links
-        links = site.links[:]
-        if self.__current_depth < self.max_depth:
-            self.__current_depth += 1
-            for link in site.links:
-                if link.target in self.__visited_sites:
-                    print 'skipping %s' % site
-                else:
-                    self.__visited_sites.add(link.target)
-                    links.extend(self._follow_links(link.target))
-            self.__current_depth -= 1
-        return links
-    
-    def _broad_search(self):
-        self.__visited_sites = set()
-        self.__visited_sites.add(self.start_site)
-        all_links = self._follow_links(self.start_site)
-        self.__visited_sites = set()
-        return all_links
+class WikipediaApiParserTest(unittest.TestCase):
+    def test_dont_parse_files(self):
+        matche = find_links_in_text('[[Datei:a link]]')
+        self.assertEquals([], matche)
 
-    def link_statistics(self):
-        all_links = self._broad_search()
-        return Counter(all_links)
+    def test_parse_link_from_markup(self):
+        matche = find_links_in_text('[[a link]]')[0]
+        self.assertEquals('a link', matche['name'])
+        self.assertEquals('a link', matche['link'])
+
+    def test_parse_link_and_name_from_markup(self):
+        matche = find_links_in_text('[[a link|a name]]')[0]
+        self.assertEquals('a name', matche['name'])
+        self.assertEquals('a link', matche['link'])
+
+    def test_parse_two_links_and_one_name_from_markup(self):
+        matches = find_links_in_text('[[a link|a name]] and [[an other link]]')
+        self.assertEquals('a name', matches[0]['name'])
+        self.assertEquals('a link', matches[0]['link'])
+        self.assertEquals('an other link', matches[1]['name'])
+        self.assertEquals('an other link', matches[1]['link'])
 
 class WikipediaLoaderTest(unittest.TestCase):
     def test_create_main_page(self):
