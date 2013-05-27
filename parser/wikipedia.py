@@ -3,17 +3,29 @@ Created on May 26, 2013
 
 @author: cda
 '''
-from site.wikipedia import WikipediaSite
 import urllib
 import json
 
-class WikipediaApiParser(object):
 
-    def parse_site_from_json(self, json):
-        pages = json['query']['pages']
+def find_links_in_text(text):
+    import re
+    return tuple(re.findall(ur"\[\[(.+?)\]\]+?", text))
+
+class WikipediaApiParser(object):
+    
+    def __init__(self, loader):
+        self.loader = loader
+
+    def parse_links(self, title):
+        content = self._parse_content(title)
+        return find_links_in_text(content)
+
+    def _parse_content(self, title):
+        json_object = self.loader.load(title)
+        pages = json_object['query']['pages']
         assert len(pages.keys()) == 1, pages.keys()
-        content = pages.values()[0]
-        return WikipediaSite(content)
+        content = pages.values()[0]['revisions'][0]['*']
+        return content
 
 class WikipediaLoader(object):
     def __init__(self):
@@ -22,19 +34,14 @@ class WikipediaLoader(object):
                        'action' : 'query',
                        'prop' : 'revisions',
                        'rvprop' : 'content'}
-        self.parser = WikipediaApiParser()
-        self.__site_cache = {}
 
-    def json_fetch(self, title):
+    def _query_api(self, title):
         query_params = self.params.copy()
         query_params['titles'] = title
         query_url = urllib.urlopen(self.endpoint + '?%s' % urllib.urlencode(query_params))
-        return json.load(query_url)
+        json_object = json.load(query_url)
+        return json_object
 
-    def load_site_by_title(self, title):
-        if title not in self.__site_cache.keys():
-            json_object = self.json_fetch(title)
-            site = self.parser.parse_site_from_json(json_object)
-            assert title == site.title, site.title
-            self.__site_cache[site.title] = site
-        return self.__site_cache[title]
+    def load(self, title):
+        json_object = self._query_api(title)
+        return json_object
